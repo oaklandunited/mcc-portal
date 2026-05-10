@@ -1,0 +1,21 @@
+# Local Supabase config — never commit
+config.js
+
+# Claude Code MCP config (pinned to a specific Supabase project ref)
+.mcp.json
+
+# Agent Skills (installed locally via `npx skills add`)
+.agents/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Node (in case you add tooling later)
+node_modules/
+.npm/
+.env
+.env.local
+.vercel
+.netlify

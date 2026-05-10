@@ -1,0 +1,1347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Project Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:#1A2B3C; --slate:#2F3E4E; --offwhite:#F7F5F1;
+    --hairline:#E5E2DC; --muted:#6E7A85;
+    --green:#3f7d5b; --amber:#b88a2c; --red:#a14444; --blue:#3a5a78;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--offwhite);color:var(--navy);font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:'Playfair Display',Georgia,serif;font-weight:600;color:var(--navy);margin:0 0 .4em 0;line-height:1.2}
+  h1{font-size:1.85rem} h2{font-size:1.45rem} h3{font-size:1.15rem} h4{font-size:1rem}
+  a{color:var(--slate);text-decoration:none;border-bottom:1px solid var(--hairline)}
+  a:hover{color:var(--navy);border-bottom-color:var(--navy)}
+  .eyebrow{font-size:.7rem;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);font-weight:500}
+  .muted{color:var(--muted)} hr{border:none;border-top:1px solid var(--hairline);margin:1.5rem 0}
+
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  aside{background:#fff;border-right:1px solid var(--hairline);padding:1.5rem 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand{padding:0 1.5rem 1.25rem;border-bottom:1px solid var(--hairline);margin-bottom:1rem}
+  .brand .name{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:600;letter-spacing:-.01em}
+  .brand .sub{font-size:.7rem;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);margin-top:.35rem}
+
+  .ws-switcher{padding:0 1.5rem 1rem;border-bottom:1px solid var(--hairline);margin-bottom:.5rem}
+  .ws-switcher select{margin-bottom:.4rem}
+
+  nav.menu{display:flex;flex-direction:column}
+  nav.menu button{background:transparent;border:none;text-align:left;padding:.7rem 1.5rem;cursor:pointer;font:inherit;color:var(--slate);border-left:2px solid transparent;display:flex;align-items:center;gap:.65rem;font-size:.92rem;width:100%}
+  nav.menu button:hover{background:var(--offwhite);color:var(--navy)}
+  nav.menu button.active{color:var(--navy);background:var(--offwhite);border-left-color:var(--navy);font-weight:500}
+  .menu-section{font-size:.65rem;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);padding:1.1rem 1.5rem .35rem;font-weight:500}
+  .user-block{margin-top:auto;padding:1rem 1.5rem;border-top:1px solid var(--hairline);font-size:.82rem;color:var(--muted)}
+  .user-block .email{color:var(--navy);word-break:break-all;margin-bottom:.4rem}
+
+  main{padding:2.25rem 2.75rem;max-width:1240px;width:100%}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;gap:2rem;flex-wrap:wrap}
+  .topbar .titleblock h1{margin-bottom:.25rem}
+  .topbar .meta{display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+
+  .btn{display:inline-flex;align-items:center;gap:.4rem;background:var(--navy);color:#fff;border:1px solid var(--navy);padding:.55rem 1rem;font-size:.85rem;cursor:pointer;font:inherit;font-weight:500;text-decoration:none;border-radius:0;transition:opacity .15s}
+  .btn:hover{opacity:.85;color:#fff}
+  .btn.secondary{background:transparent;color:var(--navy)}
+  .btn.secondary:hover{background:var(--navy);color:#fff;opacity:1}
+  .btn.subtle{background:transparent;color:var(--slate);border-color:var(--hairline);font-weight:400}
+  .btn.subtle:hover{border-color:var(--navy);color:var(--navy);background:transparent}
+  .btn.danger{background:transparent;color:var(--red);border-color:var(--hairline)}
+  .btn.danger:hover{background:var(--red);color:#fff;border-color:var(--red)}
+  .btn.sm{padding:.35rem .7rem;font-size:.78rem}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+
+  .card{background:#fff;border:1px solid var(--hairline);padding:1.5rem;margin-bottom:1.25rem}
+  .grid{display:grid;gap:1.25rem}
+  .grid.cols-2{grid-template-columns:repeat(2,1fr)}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr)}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:900px){.grid.cols-2,.grid.cols-3,.grid.cols-4{grid-template-columns:1fr}.app{grid-template-columns:1fr}aside{position:static;height:auto}}
+
+  .stat .value{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:600;line-height:1;margin-top:.25rem}
+  .stat .label{font-size:.7rem;text-transform:uppercase;letter-spacing:.18em;color:var(--muted);font-weight:500}
+  .stat .delta{font-size:.78rem;color:var(--muted);margin-top:.4rem}
+  .progress{height:4px;background:var(--hairline);position:relative;overflow:hidden;margin-top:.5rem}
+  .progress > div{height:100%;background:var(--navy);transition:width .4s ease}
+
+  .pill{display:inline-block;padding:.18rem .55rem;font-size:.7rem;border:1px solid var(--hairline);background:#fff;letter-spacing:.04em;color:var(--slate);text-transform:uppercase;font-weight:500}
+  .pill.green{color:var(--green);border-color:var(--green)}
+  .pill.amber{color:var(--amber);border-color:var(--amber)}
+  .pill.red{color:var(--red);border-color:var(--red)}
+  .pill.blue{color:var(--blue);border-color:var(--blue)}
+  .pill.dark{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th,td{text-align:left;padding:.7rem .65rem;border-bottom:1px solid var(--hairline);vertical-align:top}
+  th{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:500;background:var(--offwhite)}
+  tr:hover td{background:#fbfaf6}
+  td.actions{text-align:right;white-space:nowrap}
+
+  input[type="text"],input[type="email"],input[type="password"],input[type="date"],input[type="url"],textarea,select{font:inherit;font-size:.9rem;width:100%;padding:.55rem .7rem;background:#fff;border:1px solid var(--hairline);color:var(--navy);border-radius:0;outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--navy)}
+  textarea{min-height:80px;resize:vertical;font-family:'Inter',sans-serif}
+  label{display:block;font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.3rem;font-weight:500}
+  .field{margin-bottom:.9rem}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+  @media(max-width:700px){.row{grid-template-columns:1fr}}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(26,43,60,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:1rem}
+  .modal{background:#fff;border:1px solid var(--hairline);max-width:560px;width:100%;padding:1.75rem;max-height:90vh;overflow-y:auto}
+  .modal h3{margin-bottom:1rem}
+  .modal-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--hairline)}
+  .hidden{display:none!important}
+
+  .phase{background:#fff;border:1px solid var(--hairline);padding:1.5rem;margin-bottom:1rem}
+  .phase-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem}
+  .phase-num{font-family:'Playfair Display',serif;font-size:2.1rem;color:var(--muted);line-height:1;margin-right:1rem;font-weight:500}
+  .phase-row{display:flex;align-items:flex-start;gap:1rem}
+  .phase-meta{display:flex;gap:1.5rem;font-size:.78rem;color:var(--muted);margin-top:.6rem;flex-wrap:wrap}
+  .phase-meta strong{color:var(--navy);font-weight:500}
+  .phase-tasks{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--hairline)}
+  .checklist{list-style:none;padding:0;margin:.75rem 0 0 0}
+  .checklist li{padding:.4rem 0;display:flex;align-items:center;gap:.6rem;font-size:.88rem}
+  .checklist input[type="checkbox"]{margin:0}
+
+  .task-row{display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:1rem;align-items:center;padding:.75rem 1rem;border-bottom:1px solid var(--hairline);background:#fff;font-size:.88rem}
+  .task-row:hover{background:#fbfaf6}
+  .task-title{font-weight:500}
+  .task-meta{font-size:.78rem;color:var(--muted);margin-top:.15rem}
+  @media(max-width:800px){.task-row{grid-template-columns:auto 1fr;row-gap:.4rem}.task-row > *:nth-child(n+3){grid-column:2}}
+
+  .filterbar{display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+  .filterbar select,.filterbar input{max-width:200px;padding:.4rem .55rem;font-size:.85rem}
+
+  .empty{text-align:center;padding:2rem;color:var(--muted);font-size:.9rem;background:#fff;border:1px dashed var(--hairline)}
+
+  .activity{font-size:.85rem;list-style:none;padding:0}
+  .activity li{padding:.55rem 0;border-bottom:1px solid var(--hairline)}
+  .activity li:last-child{border-bottom:none}
+  .activity time{font-size:.75rem;color:var(--muted);display:block;margin-top:.15rem}
+
+  .col-item{padding:1rem;border:1px solid var(--hairline);background:#fff;display:flex;flex-direction:column;gap:.5rem}
+  .col-item h4{margin:0}
+  .col-item .desc{font-size:.85rem;color:var(--slate)}
+
+  /* Auth screen */
+  .auth-page{min-height:100vh;display:grid;place-items:center;padding:2rem}
+  .auth-box{background:#fff;border:1px solid var(--hairline);padding:2.5rem;max-width:420px;width:100%}
+  .auth-box .brand-mark{margin-bottom:1.5rem}
+  .auth-tabs{display:flex;gap:.4rem;margin-bottom:1.25rem;border-bottom:1px solid var(--hairline)}
+  .auth-tabs button{background:none;border:none;font:inherit;color:var(--muted);padding:.5rem .25rem;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .auth-tabs button.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:500}
+  .auth-msg{font-size:.85rem;padding:.6rem .8rem;background:var(--offwhite);border:1px solid var(--hairline);margin-bottom:1rem}
+  .auth-msg.error{color:var(--red);border-color:var(--red)}
+  .auth-msg.success{color:var(--green);border-color:var(--green)}
+
+  .center-page{min-height:100vh;display:grid;place-items:center;padding:2rem}
+  .center-page .center-box{max-width:540px;width:100%;background:#fff;border:1px solid var(--hairline);padding:2.5rem;text-align:center}
+  .loading{text-align:center;padding:3rem;color:var(--muted)}
+
+  /* Banner */
+  .banner{background:var(--navy);color:#fff;padding:.6rem 1rem;text-align:center;font-size:.85rem}
+  .banner a{color:#fff;border-bottom-color:#fff}
+
+  @media print{aside{display:none}.app{grid-template-columns:1fr}main{padding:1rem}.btn,.actions{display:none!important}}
+</style>
+</head>
+<body>
+<div id="root"><div class="loading">Loading…</div></div>
+<div id="modal-mount"></div>
+
+<script src="config.js" onerror="document.getElementById('root').innerHTML = '&lt;div class=&quot;center-page&quot;&gt;&lt;div class=&quot;center-box&quot;&gt;&lt;h2&gt;Configuration missing&lt;/h2&gt;&lt;p class=&quot;muted&quot;&gt;Copy &lt;code&gt;config.example.js&lt;/code&gt; to &lt;code&gt;config.js&lt;/code&gt; and add your Supabase URL and anon key.&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;'"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* =========================================================================
+   Project Portal — Multi-tenant frontend
+   - Supabase Auth + Postgres (RLS-protected)
+   - Agency -> Workspaces -> Projects
+   - Roles: owner | pm | client_edit | client_view
+   ========================================================================= */
+
+if (typeof window.SUPABASE_URL !== 'string' || typeof window.SUPABASE_ANON_KEY !== 'string'
+    || window.SUPABASE_URL.includes('YOUR-PROJECT')) {
+  document.getElementById('root').innerHTML =
+    '<div class="center-page"><div class="center-box"><h2>Configuration needed</h2>' +
+    '<p class="muted">Edit <code>config.js</code> with your Supabase URL and anon key, then reload.</p></div></div>';
+  throw new Error('Supabase config missing');
+}
+
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
+  auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: true }
+});
+
+/* ----- STATE ------------------------------------------------------------- */
+const App = {
+  user: null,
+  workspaces: [],   // [{id, name, slug, my_role}]
+  workspace: null,  // selected workspace object
+  projects: [],     // projects in current workspace
+  project: null,    // selected project
+  data: {           // hydrated per project
+    phases: [], exit_criteria: [], tasks: [], collateral: [],
+    decisions: [], approvals: [], kickoff_items: [], kpis: [],
+    team_members: [], activity_log: [], members: [], invites: []
+  },
+  view: 'dashboard',
+  filters: { phase:'all', status:'all', assignee:'all', search:'' },
+  authTab: 'signin'
+};
+
+/* ----- UTIL -------------------------------------------------------------- */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—';
+const fmtDateTime = d => d ? new Date(d).toLocaleString() : '—';
+const slugify = s => String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+
+const STATUS_OPTS = ['Not Started','In Progress','Blocked','Complete','On Hold'];
+const TASK_STATUS = ['To Do','In Progress','Blocked','Done'];
+const PRIORITY = ['Low','Medium','High','Critical'];
+const COLLATERAL_STATUS = ['Requested','In Progress','Provided','Approved','N/A'];
+const COLLATERAL_CATEGORIES = ['Brand Assets','Imagery','Content','Credentials','References','Other'];
+const APPROVAL_STATUS = ['Not Submitted','Submitted','Approved','Changes Requested','Rejected'];
+const DECISION_STATUS = ['Pending','Approved','Rejected','Deferred'];
+const ROLES = [
+  {key:'owner',       label:'Owner'},
+  {key:'pm',          label:'Project Manager'},
+  {key:'client_edit', label:'Client (edit)'},
+  {key:'client_view', label:'Client (view-only)'}
+];
+
+function statusPill(s){
+  const map = {
+    'Not Started':'', 'On Hold':'amber', 'In Progress':'blue', 'Blocked':'red', 'Complete':'green',
+    'To Do':'', 'Done':'green',
+    'Requested':'amber', 'Provided':'blue', 'Approved':'green', 'N/A':'',
+    'Pending':'amber', 'Rejected':'red', 'Deferred':'',
+    'Not Submitted':'', 'Submitted':'blue', 'Changes Requested':'amber'
+  };
+  return `<span class="pill ${map[s]||''}">${esc(s)}</span>`;
+}
+function priorityPill(p){
+  const map = {Critical:'red', High:'amber', Medium:'blue', Low:''};
+  return `<span class="pill ${map[p]||''}">${esc(p)}</span>`;
+}
+function rolePill(r){
+  const map = {owner:'dark', pm:'blue', client_edit:'', client_view:'amber'};
+  const label = (ROLES.find(x=>x.key===r)||{label:r}).label;
+  return `<span class="pill ${map[r]||''}">${esc(label)}</span>`;
+}
+
+/* ----- PERMISSION HELPERS ------------------------------------------------ */
+const myRole = () => App.workspace?.my_role || 'client_view';
+const canEdit  = () => ['owner','pm','client_edit'].includes(myRole());
+const canAdmin = () => ['owner','pm'].includes(myRole());
+const isOwner  = () => myRole() === 'owner';
+
+/* ----- MODAL ------------------------------------------------------------- */
+function openModal(html){
+  const m = document.getElementById('modal-mount');
+  m.innerHTML = `<div class="modal-bg" id="mb"><div class="modal" onclick="event.stopPropagation()">${html}</div></div>`;
+  document.getElementById('mb').addEventListener('click', closeModal);
+}
+function closeModal(){ document.getElementById('modal-mount').innerHTML = ''; }
+window.closeModal = closeModal;
+
+/* =========================================================================
+   ROUTING / BOOT
+   ========================================================================= */
+async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) { renderAuth(); return; }
+  App.user = session.user;
+
+  await loadWorkspaces();
+  if (!App.workspaces.length) { renderOnboardingWorkspace(); return; }
+
+  // pick last-used or first workspace
+  const lastWs = localStorage.getItem('lastWorkspace');
+  App.workspace = App.workspaces.find(w => w.id === lastWs) || App.workspaces[0];
+
+  await loadProjects();
+  if (!App.projects.length) { renderApp(); return; }
+
+  const lastProj = localStorage.getItem('lastProject:' + App.workspace.id);
+  App.project = App.projects.find(p => p.id === lastProj) || App.projects[0];
+
+  await loadProjectData();
+  renderApp();
+}
+
+sb.auth.onAuthStateChange((_e, session) => {
+  if (session && !App.user) {
+    App.user = session.user;
+    boot();
+  } else if (!session) {
+    App.user = null; App.workspace = null; App.project = null;
+    renderAuth();
+  }
+});
+
+/* =========================================================================
+   AUTH
+   ========================================================================= */
+function renderAuth(msg, kind){
+  const root = document.getElementById('root');
+  const tab = App.authTab;
+  root.innerHTML = `
+    <div class="auth-page">
+      <div class="auth-box">
+        <div class="brand-mark">
+          <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:600">Project Portal</div>
+          <div class="eyebrow" style="margin-top:.3rem">Strategic communications projects</div>
+        </div>
+        <div class="auth-tabs">
+          <button class="${tab==='signin'?'active':''}" onclick="App.authTab='signin';renderAuth()">Sign in</button>
+          <button class="${tab==='signup'?'active':''}" onclick="App.authTab='signup';renderAuth()">Create account</button>
+          <button class="${tab==='magic'?'active':''}" onclick="App.authTab='magic';renderAuth()">Magic link</button>
+        </div>
+        ${msg ? `<div class="auth-msg ${kind||''}">${esc(msg)}</div>` : ''}
+        ${tab==='magic' ? `
+          <div class="field"><label>Email</label><input id="auth-email" type="email" autocomplete="email"></div>
+          <button class="btn" style="width:100%" onclick="sendMagicLink()">Send magic link</button>
+          <p class="muted" style="font-size:.8rem;margin-top:.8rem">We'll email you a one-click sign-in link.</p>
+        ` : `
+          <div class="field"><label>Email</label><input id="auth-email" type="email" autocomplete="email"></div>
+          <div class="field"><label>Password</label><input id="auth-password" type="password" autocomplete="${tab==='signup'?'new':'current'}-password"></div>
+          <button class="btn" style="width:100%" onclick="${tab==='signup'?'doSignup()':'doSignin()'}">${tab==='signup'?'Create account':'Sign in'}</button>
+        `}
+      </div>
+    </div>`;
+}
+window.renderAuth = renderAuth;
+
+window.doSignin = async function(){
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) return renderAuth('Email and password are required.','error');
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) return renderAuth(error.message,'error');
+  // onAuthStateChange will boot
+};
+window.doSignup = async function(){
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || password.length < 8) return renderAuth('Password must be at least 8 characters.','error');
+  const { error } = await sb.auth.signUp({ email, password, options:{ emailRedirectTo: location.href } });
+  if (error) return renderAuth(error.message,'error');
+  renderAuth('Check your email to confirm your account, then sign in.','success');
+};
+window.sendMagicLink = async function(){
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) return renderAuth('Email is required.','error');
+  const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: location.href } });
+  if (error) return renderAuth(error.message,'error');
+  renderAuth('Magic link sent. Check your email.','success');
+};
+window.signOut = async function(){
+  await sb.auth.signOut();
+  localStorage.removeItem('lastWorkspace');
+  // onAuthStateChange will renderAuth
+};
+
+/* =========================================================================
+   DATA LOADERS
+   ========================================================================= */
+async function loadWorkspaces(){
+  // If user has a pending invite for this email, accept it (best-effort)
+  await acceptPendingInvites();
+  const { data, error } = await sb.from('my_workspaces').select('*').order('created_at');
+  if (error) { console.error(error); App.workspaces = []; return; }
+  App.workspaces = data || [];
+}
+
+async function acceptPendingInvites(){
+  const email = (App.user?.email || '').toLowerCase();
+  if (!email) return;
+  const { data: invs } = await sb.from('workspace_invites').select('*').ilike('email', email);
+  if (!invs || !invs.length) return;
+  for (const inv of invs) {
+    await sb.from('workspace_members').insert({
+      workspace_id: inv.workspace_id, user_id: App.user.id, role: inv.role
+    });
+    await sb.from('workspace_invites').delete().eq('id', inv.id);
+  }
+}
+
+async function loadProjects(){
+  const { data, error } = await sb.from('projects')
+    .select('*').eq('workspace_id', App.workspace.id).order('created_at');
+  if (error) { console.error(error); App.projects = []; return; }
+  App.projects = data || [];
+}
+
+async function loadProjectData(){
+  if (!App.project) return;
+  const pid = App.project.id;
+  const tables = ['phases','exit_criteria','tasks','collateral','decisions','approvals','kickoff_items','kpis','team_members'];
+  const queries = await Promise.all([
+    sb.from('phases').select('*').eq('project_id', pid).order('position'),
+    sb.from('exit_criteria').select('*, phase:phases!inner(project_id)').eq('phase.project_id', pid).order('position'),
+    sb.from('tasks').select('*').eq('project_id', pid).order('created_at'),
+    sb.from('collateral').select('*').eq('project_id', pid).order('category').order('name'),
+    sb.from('decisions').select('*').eq('project_id', pid).order('created_at'),
+    sb.from('approvals').select('*').eq('project_id', pid).order('created_at'),
+    sb.from('kickoff_items').select('*').eq('project_id', pid).order('position'),
+    sb.from('kpis').select('*').eq('project_id', pid).order('position'),
+    sb.from('team_members').select('*').eq('project_id', pid).order('position'),
+    sb.from('activity_log').select('*').eq('project_id', pid).order('created_at',{ ascending:false }).limit(50)
+  ]);
+  App.data.phases        = queries[0].data || [];
+  App.data.exit_criteria = queries[1].data || [];
+  App.data.tasks         = queries[2].data || [];
+  App.data.collateral    = queries[3].data || [];
+  App.data.decisions     = queries[4].data || [];
+  App.data.approvals     = queries[5].data || [];
+  App.data.kickoff_items = queries[6].data || [];
+  App.data.kpis          = queries[7].data || [];
+  App.data.team_members  = queries[8].data || [];
+  App.data.activity_log  = queries[9].data || [];
+}
+
+async function loadMembers(){
+  if (!App.workspace) return;
+  const { data: members } = await sb.from('workspace_members').select('*').eq('workspace_id', App.workspace.id);
+  const { data: invites } = await sb.from('workspace_invites').select('*').eq('workspace_id', App.workspace.id);
+  App.data.members = members || [];
+  App.data.invites = invites || [];
+}
+
+async function logActivity(text){
+  if (!App.project || !canEdit()) return;
+  await sb.from('activity_log').insert({ project_id: App.project.id, user_id: App.user.id, text });
+  const { data } = await sb.from('activity_log').select('*').eq('project_id', App.project.id).order('created_at',{ascending:false}).limit(50);
+  App.data.activity_log = data || [];
+}
+
+/* =========================================================================
+   ONBOARDING (no workspaces yet)
+   ========================================================================= */
+function renderOnboardingWorkspace(){
+  document.getElementById('root').innerHTML = `
+    <div class="center-page">
+      <div class="center-box">
+        <span class="eyebrow">Welcome</span>
+        <h1 style="margin-top:.4rem">Create your first workspace</h1>
+        <p class="muted" style="margin-bottom:1.5rem">A workspace is a container for one client (or one of your own brands). Each workspace can hold multiple projects.</p>
+        <div class="field" style="text-align:left"><label>Workspace name</label><input id="ws-name" type="text" placeholder="e.g. Mecoy Communications"></div>
+        <button class="btn" onclick="createWorkspace()">Create workspace</button>
+        <hr/>
+        <p class="muted" style="font-size:.8rem"><a href="#" onclick="signOut();return false">Sign out</a></p>
+      </div>
+    </div>`;
+  setTimeout(() => document.getElementById('ws-name').focus(), 100);
+}
+window.createWorkspace = async function(){
+  const name = document.getElementById('ws-name').value.trim();
+  if (!name) return alert('Workspace name is required.');
+  const slug = slugify(name) + '-' + Math.random().toString(36).slice(2,6);
+  const { data, error } = await sb.from('workspaces').insert({ name, slug, created_by: App.user.id }).select().single();
+  if (error) return alert(error.message);
+  localStorage.setItem('lastWorkspace', data.id);
+  await boot();
+};
+
+/* =========================================================================
+   APP SHELL
+   ========================================================================= */
+function renderApp(){
+  const root = document.getElementById('root');
+  root.innerHTML = `
+    <div class="app">
+      <aside>
+        <div class="brand">
+          <div class="name">${esc(App.workspace?.name || 'Workspace')}</div>
+          <div class="sub">Project Portal</div>
+        </div>
+
+        <div class="ws-switcher">
+          <label>Workspace</label>
+          <select onchange="switchWorkspace(this.value)">
+            ${App.workspaces.map(w => `<option value="${esc(w.id)}" ${w.id===App.workspace?.id?'selected':''}>${esc(w.name)}</option>`).join('')}
+          </select>
+          ${isOwner() || canAdmin() ? `<button class="btn subtle sm" style="width:100%;margin-top:.4rem" onclick="newWorkspaceModal()">+ New workspace</button>` : ''}
+
+          <label style="margin-top:.8rem">Project</label>
+          <select onchange="switchProject(this.value)">
+            ${App.projects.length === 0 ? '<option>No projects yet</option>' :
+              App.projects.map(p => `<option value="${esc(p.id)}" ${p.id===App.project?.id?'selected':''}>${esc(p.name)}</option>`).join('')}
+          </select>
+          ${canAdmin() ? `<button class="btn subtle sm" style="width:100%;margin-top:.4rem" onclick="newProjectModal()">+ New project</button>` : ''}
+        </div>
+
+        ${App.project ? `
+          <nav class="menu" id="menu">
+            <button data-view="dashboard" class="${App.view==='dashboard'?'active':''}">Dashboard</button>
+            <button data-view="phases" class="${App.view==='phases'?'active':''}">Phases &amp; Timeline</button>
+            <button data-view="tasks" class="${App.view==='tasks'?'active':''}">Tasks</button>
+            <button data-view="collateral" class="${App.view==='collateral'?'active':''}">Collateral</button>
+            <button data-view="decisions" class="${App.view==='decisions'?'active':''}">Decisions</button>
+            <button data-view="approvals" class="${App.view==='approvals'?'active':''}">Reviews &amp; Approvals</button>
+            <button data-view="kickoff" class="${App.view==='kickoff'?'active':''}">Kickoff Checklist</button>
+            <div class="menu-section">Project</div>
+            <button data-view="team" class="${App.view==='team'?'active':''}">Team</button>
+            <button data-view="kpis" class="${App.view==='kpis'?'active':''}">KPIs</button>
+            <button data-view="settings" class="${App.view==='settings'?'active':''}">Settings</button>
+            ${canAdmin() ? `<div class="menu-section">Workspace</div>
+              <button data-view="members" class="${App.view==='members'?'active':''}">Members</button>` : ''}
+          </nav>` : ''}
+
+        <div class="user-block">
+          <div class="email">${esc(App.user.email)}</div>
+          <div>${rolePill(myRole())}</div>
+          <a href="#" onclick="signOut();return false" style="font-size:.8rem;display:inline-block;margin-top:.5rem">Sign out</a>
+        </div>
+      </aside>
+      <main id="main"></main>
+    </div>`;
+
+  if (App.project) {
+    document.getElementById('menu').addEventListener('click', e => {
+      const b = e.target.closest('button[data-view]');
+      if (!b) return;
+      App.view = b.dataset.view;
+      renderApp();
+    });
+    renderView();
+  } else {
+    document.getElementById('main').innerHTML = `
+      <div class="topbar"><div class="titleblock"><span class="eyebrow">${esc(App.workspace.name)}</span><h1>No projects yet</h1></div></div>
+      ${canAdmin() ? `<div class="card">
+        <p class="muted">Create your first project. The Mecoy template ships with all phases, exit criteria, default tasks, and a collateral checklist already populated.</p>
+        <button class="btn" onclick="newProjectModal()">+ New project</button>
+      </div>` : `<div class="empty">No projects in this workspace yet. Ask an Owner or Project Manager to create one.</div>`}`;
+  }
+}
+
+window.switchWorkspace = async function(id){
+  App.workspace = App.workspaces.find(w => w.id === id);
+  localStorage.setItem('lastWorkspace', id);
+  App.project = null; App.view = 'dashboard';
+  await loadProjects();
+  if (App.projects.length) {
+    const last = localStorage.getItem('lastProject:' + id);
+    App.project = App.projects.find(p => p.id === last) || App.projects[0];
+    await loadProjectData();
+  }
+  renderApp();
+};
+window.switchProject = async function(id){
+  App.project = App.projects.find(p => p.id === id);
+  if (App.project) localStorage.setItem('lastProject:' + App.workspace.id, id);
+  App.view = 'dashboard';
+  await loadProjectData();
+  renderApp();
+};
+
+window.newWorkspaceModal = function(){
+  openModal(`
+    <h3>New workspace</h3>
+    <div class="field"><label>Name</label><input id="f-name" type="text" placeholder="e.g. Acme Corp"></div>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="createWorkspaceFromModal()">Create</button>
+    </div>`);
+  setTimeout(() => document.getElementById('f-name').focus(), 50);
+};
+window.createWorkspaceFromModal = async function(){
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) return alert('Name is required.');
+  const slug = slugify(name) + '-' + Math.random().toString(36).slice(2,6);
+  const { data, error } = await sb.from('workspaces').insert({ name, slug, created_by: App.user.id }).select().single();
+  if (error) return alert(error.message);
+  closeModal();
+  localStorage.setItem('lastWorkspace', data.id);
+  await boot();
+};
+
+window.newProjectModal = function(){
+  if (!canAdmin()) return alert('You need Owner or PM role to create projects.');
+  openModal(`
+    <h3>New project</h3>
+    <div class="field"><label>Project name</label><input id="f-name" type="text" placeholder="e.g. Mecoy Website Redesign"></div>
+    <div class="field"><label>Client (optional)</label><input id="f-client" type="text" placeholder="e.g. Mecoy Communications"></div>
+    <div class="field"><label>Template</label>
+      <select id="f-tpl">
+        <option value="mecoy_website">Website redesign (Mecoy template)</option>
+      </select>
+    </div>
+    <p class="muted" style="font-size:.8rem">The template ships with all phases, exit criteria, ~26 default tasks, ~22 collateral items, decisions, approvals, kickoff checklist, and KPI targets pre-populated.</p>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="createProject()">Create &amp; seed</button>
+    </div>`);
+  setTimeout(() => document.getElementById('f-name').focus(), 50);
+};
+window.createProject = async function(){
+  const name = document.getElementById('f-name').value.trim();
+  const client = document.getElementById('f-client').value.trim();
+  const tpl = document.getElementById('f-tpl').value;
+  if (!name) return alert('Name is required.');
+  const slug = slugify(name) + '-' + Math.random().toString(36).slice(2,6);
+  const { data, error } = await sb.rpc('create_project_with_template', {
+    p_workspace: App.workspace.id, p_name: name, p_slug: slug,
+    p_client_name: client || name, p_template: tpl
+  });
+  if (error) return alert(error.message);
+  closeModal();
+  await loadProjects();
+  App.project = App.projects.find(p => p.id === data);
+  localStorage.setItem('lastProject:' + App.workspace.id, App.project.id);
+  await loadProjectData();
+  renderApp();
+};
+
+/* =========================================================================
+   VIEW DISPATCH
+   ========================================================================= */
+async function renderView(){
+  const m = document.getElementById('main');
+  const fns = {
+    dashboard: viewDashboard, phases: viewPhases, tasks: viewTasks,
+    collateral: viewCollateral, decisions: viewDecisions, approvals: viewApprovals,
+    kickoff: viewKickoff, team: viewTeam, kpis: viewKpis,
+    settings: viewSettings, members: viewMembers
+  };
+  if (App.view === 'members') { await loadMembers(); }
+  m.innerHTML = (fns[App.view] || viewDashboard)();
+}
+
+function topbar(title, right=''){
+  return `
+    <div class="topbar">
+      <div class="titleblock">
+        <span class="eyebrow">${esc(App.project?.client_name || App.workspace?.name || '')}</span>
+        <h1>${esc(title)}</h1>
+      </div>
+      <div class="meta">${right}</div>
+    </div>`;
+}
+function statCard(label, value, delta, pct){
+  return `
+    <div class="card stat">
+      <div class="label">${esc(label)}</div>
+      <div class="value">${esc(value)}</div>
+      ${typeof pct === 'number' ? `<div class="progress"><div style="width:${pct}%"></div></div>` : ''}
+      <div class="delta">${esc(delta)}</div>
+    </div>`;
+}
+function phaseName(id){
+  const p = App.data.phases.find(x => x.id === id);
+  return p ? `Phase ${p.num}: ${p.name}` : '—';
+}
+
+/* ===== DASHBOARD ========================================================= */
+function viewDashboard(){
+  const tasks = App.data.tasks;
+  const totalTasks = tasks.length;
+  const doneTasks = tasks.filter(t => t.status==='Done').length;
+  const pct = totalTasks ? Math.round(doneTasks/totalTasks*100) : 0;
+
+  const collTotal = App.data.collateral.length;
+  const collDone = App.data.collateral.filter(c => ['Provided','Approved','N/A'].includes(c.status)).length;
+  const collPct = collTotal ? Math.round(collDone/collTotal*100) : 0;
+
+  const kickoff = App.data.kickoff_items;
+  const kickPct = kickoff.length ? Math.round(kickoff.filter(k=>k.done).length/kickoff.length*100) : 0;
+
+  const phases = App.data.phases;
+  const currentPhase = phases.find(p => p.status !== 'Complete') || phases[phases.length-1];
+  const cpTasks = currentPhase ? tasks.filter(t => t.phase_id === currentPhase.id) : [];
+  const cpDone = cpTasks.filter(t => t.status==='Done').length;
+  const cpPct = cpTasks.length ? Math.round(cpDone/cpTasks.length*100) : 0;
+  const cpEC = currentPhase ? App.data.exit_criteria.filter(ec => ec.phase_id === currentPhase.id) : [];
+
+  const upcoming = tasks
+    .filter(t => t.due_date && t.status !== 'Done')
+    .sort((a,b) => new Date(a.due_date) - new Date(b.due_date)).slice(0,6);
+  const pendingApprovals = App.data.approvals.filter(a => ['Submitted','Not Submitted'].includes(a.status)).slice(0,5);
+  const pendingDecisions = App.data.decisions.filter(d => d.status === 'Pending').slice(0,5);
+  const outstandingColl = App.data.collateral.filter(c => ['Requested','In Progress'].includes(c.status)).slice(0,8);
+
+  return `
+    ${topbar('Dashboard', `<span class="muted">${rolePill(myRole())}</span>`)}
+
+    <div class="grid cols-4">
+      ${statCard('Overall Progress', pct+'%', `${doneTasks} of ${totalTasks} tasks done`, pct)}
+      ${statCard('Collateral Received', collPct+'%', `${collDone} of ${collTotal} items`, collPct)}
+      ${statCard('Kickoff Readiness', kickPct+'%', `${kickoff.filter(k=>k.done).length} of ${kickoff.length} ready`, kickPct)}
+      ${statCard('Active Phase', currentPhase ? `Phase ${currentPhase.num}` : '—', currentPhase ? `${esc(currentPhase.name)} — ${cpPct}%` : '', cpPct)}
+    </div>
+
+    ${currentPhase ? `<div class="grid cols-2">
+      <div class="card">
+        <span class="eyebrow">Current Phase</span>
+        <h2 style="margin-top:.4rem">Phase ${currentPhase.num} — ${esc(currentPhase.name)}</h2>
+        <p class="muted">${esc(currentPhase.focus)}</p>
+        <div style="display:flex;gap:1rem;font-size:.8rem;color:var(--muted);margin:.6rem 0">
+          <span>${statusPill(currentPhase.status)}</span>
+          <span><strong style="color:var(--navy)">Duration:</strong> ${esc(currentPhase.duration||'')}</span>
+        </div>
+        <div class="progress"><div style="width:${cpPct}%"></div></div>
+        <hr/>
+        <h4>Exit criteria</h4>
+        <ul class="checklist">
+          ${cpEC.map(ec => `<li>
+            <input type="checkbox" ${ec.done?'checked':''} ${canEdit()?'':'disabled'} onchange="toggleEC('${ec.id}')">
+            <span style="${ec.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(ec.text)}</span>
+          </li>`).join('')}
+        </ul>
+      </div>
+
+      <div class="card">
+        <span class="eyebrow">Upcoming Deadlines</span>
+        <h2 style="margin-top:.4rem">Next up</h2>
+        ${upcoming.length ? `<table>
+          <thead><tr><th>Task</th><th>Due</th><th>Status</th></tr></thead>
+          <tbody>${upcoming.map(t => `<tr>
+            <td><div style="font-weight:500">${esc(t.title)}</div><div class="task-meta">${esc(phaseName(t.phase_id))} · ${esc(t.assignee||'Unassigned')}</div></td>
+            <td>${fmtDate(t.due_date)}</td><td>${statusPill(t.status)}</td>
+          </tr>`).join('')}</tbody></table>` : `<div class="empty">No upcoming deadlines set.</div>`}
+      </div>
+    </div>` : ''}
+
+    <div class="grid cols-2">
+      <div class="card">
+        <span class="eyebrow">Pending Decisions</span>
+        <h2 style="margin-top:.4rem">Awaiting input</h2>
+        ${pendingDecisions.length ? `<ul class="activity">${pendingDecisions.map(d => `<li>
+          <strong>${esc(d.title)}</strong>
+          <div class="task-meta">${esc(d.owner||'')} · ${esc(phaseName(d.phase_id))}</div>
+        </li>`).join('')}</ul>` : `<div class="empty">No pending decisions.</div>`}
+      </div>
+      <div class="card">
+        <span class="eyebrow">Pending Approvals</span>
+        <h2 style="margin-top:.4rem">Phase exits &amp; gates</h2>
+        ${pendingApprovals.length ? `<ul class="activity">${pendingApprovals.map(a => `<li>
+          <strong>${esc(a.name)}</strong>
+          <div class="task-meta">${statusPill(a.status)} · ${esc(a.reviewer||'')}</div>
+        </li>`).join('')}</ul>` : `<div class="empty">No pending approvals.</div>`}
+      </div>
+    </div>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <span class="eyebrow">Outstanding Collateral</span>
+        <h2 style="margin-top:.4rem">Still needed</h2>
+        ${outstandingColl.length ? `<table>
+          <thead><tr><th>Item</th><th>Category</th><th>Status</th></tr></thead>
+          <tbody>${outstandingColl.map(c => `<tr>
+            <td>${esc(c.name)}</td>
+            <td><span class="muted" style="font-size:.8rem">${esc(c.category)}</span></td>
+            <td>${statusPill(c.status)}</td>
+          </tr>`).join('')}</tbody></table>` : `<div class="empty">All collateral accounted for.</div>`}
+      </div>
+      <div class="card">
+        <span class="eyebrow">Recent Activity</span>
+        <h2 style="margin-top:.4rem">Project log</h2>
+        <ul class="activity">${App.data.activity_log.slice(0,8).map(a => `<li>
+          ${esc(a.text)}<time>${fmtDateTime(a.created_at)}</time>
+        </li>`).join('') || '<div class="empty">No activity yet.</div>'}</ul>
+      </div>
+    </div>`;
+}
+
+/* ===== PHASES ============================================================ */
+function viewPhases(){
+  return `${topbar('Phases & Timeline', '<span class="muted">Total active build: ~10–11 weeks</span>')}
+    ${App.data.phases.map(p => {
+      const tasks = App.data.tasks.filter(t => t.phase_id === p.id);
+      const done = tasks.filter(t => t.status==='Done').length;
+      const pct = tasks.length ? Math.round(done/tasks.length*100) : 0;
+      const ec = App.data.exit_criteria.filter(e => e.phase_id === p.id);
+      const ecDone = ec.filter(e => e.done).length;
+      return `<div class="phase">
+        <div class="phase-row">
+          <div class="phase-num">${p.num}</div>
+          <div style="flex:1">
+            <div class="phase-head">
+              <div>
+                <h3 style="margin-bottom:.1rem">${esc(p.name)}</h3>
+                <div class="muted" style="font-size:.88rem">${esc(p.focus||'')}</div>
+              </div>
+              <div style="display:flex;gap:.5rem;align-items:center">
+                ${statusPill(p.status)}
+                ${canEdit() ? `<select onchange="updatePhaseStatus('${p.id}',this.value)" style="max-width:160px">
+                  ${STATUS_OPTS.map(s => `<option ${s===p.status?'selected':''}>${s}</option>`).join('')}
+                </select>` : ''}
+              </div>
+            </div>
+            <div class="phase-meta">
+              <span><strong>Duration:</strong> ${esc(p.duration||'')}</span>
+              <span><strong>Tasks:</strong> ${done} / ${tasks.length} done (${pct}%)</span>
+              <span><strong>Exit criteria:</strong> ${ecDone} / ${ec.length}</span>
+            </div>
+            <div class="progress" style="margin-top:.6rem"><div style="width:${pct}%"></div></div>
+            <div class="phase-tasks">
+              <h4>Exit criteria</h4>
+              <ul class="checklist">
+                ${ec.map(e => `<li>
+                  <input type="checkbox" ${e.done?'checked':''} ${canEdit()?'':'disabled'} onchange="toggleEC('${e.id}')">
+                  <span style="${e.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(e.text)}</span>
+                </li>`).join('')}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}`;
+}
+
+/* ===== TASKS ============================================================= */
+function viewTasks(){
+  const f = App.filters;
+  const filtered = App.data.tasks.filter(t => {
+    if (f.phase!=='all' && t.phase_id!==f.phase) return false;
+    if (f.status!=='all' && t.status!==f.status) return false;
+    if (f.assignee!=='all' && t.assignee!==f.assignee) return false;
+    if (f.search && !(t.title.toLowerCase().includes(f.search.toLowerCase()) || (t.notes||'').toLowerCase().includes(f.search.toLowerCase()))) return false;
+    return true;
+  });
+  const assignees = [...new Set(App.data.tasks.map(t => t.assignee).filter(Boolean))];
+
+  return `${topbar('Tasks', canEdit() ? `<button class="btn" onclick="openTaskEditor()">+ New Task</button>` : '')}
+    <div class="filterbar">
+      <select onchange="App.filters.phase=this.value;renderView()">
+        <option value="all">All phases</option>
+        ${App.data.phases.map(p => `<option value="${p.id}" ${f.phase===p.id?'selected':''}>Phase ${p.num} — ${esc(p.name)}</option>`).join('')}
+      </select>
+      <select onchange="App.filters.status=this.value;renderView()">
+        <option value="all">All statuses</option>
+        ${TASK_STATUS.map(s => `<option ${f.status===s?'selected':''}>${s}</option>`).join('')}
+      </select>
+      <select onchange="App.filters.assignee=this.value;renderView()">
+        <option value="all">All assignees</option>
+        ${assignees.map(a => `<option ${f.assignee===a?'selected':''}>${esc(a)}</option>`).join('')}
+      </select>
+      <input type="text" placeholder="Search tasks…" value="${esc(f.search)}" oninput="App.filters.search=this.value;renderView()">
+      <span class="muted" style="margin-left:auto;font-size:.85rem">${filtered.length} of ${App.data.tasks.length} tasks</span>
+    </div>
+    <div class="card" style="padding:0">
+      ${filtered.length ? filtered.map(t => `<div class="task-row">
+        <input type="checkbox" ${t.status==='Done'?'checked':''} ${canEdit()?'':'disabled'} onchange="toggleTaskDone('${t.id}')">
+        <div>
+          <div class="task-title" style="${t.status==='Done'?'text-decoration:line-through;color:var(--muted)':''}">${esc(t.title)}</div>
+          <div class="task-meta">${esc(phaseName(t.phase_id))} · ${esc(t.assignee||'Unassigned')}${t.notes?' · '+esc(t.notes.slice(0,80))+(t.notes.length>80?'…':''):''}</div>
+        </div>
+        <div>${priorityPill(t.priority)}</div>
+        <div>${statusPill(t.status)}</div>
+        <div class="muted" style="font-size:.8rem">${fmtDate(t.due_date)}</div>
+        <div class="actions">
+          ${canEdit() ? `<button class="btn subtle sm" onclick="openTaskEditor('${t.id}')">Edit</button>
+            <button class="btn subtle sm danger" onclick="deleteTask('${t.id}')">Delete</button>` : ''}
+        </div>
+      </div>`).join('') : `<div class="empty">No tasks match the current filters.</div>`}
+    </div>`;
+}
+
+/* ===== COLLATERAL ======================================================== */
+function viewCollateral(){
+  const grouped = {};
+  COLLATERAL_CATEGORIES.forEach(c => grouped[c] = []);
+  App.data.collateral.forEach(c => { (grouped[c.category] = grouped[c.category]||[]).push(c); });
+
+  return `${topbar('Project Collateral', canEdit() ? `<button class="btn" onclick="openCollateralEditor()">+ New Item</button>` : '')}
+    <div class="card" style="background:var(--navy);color:#fff;border-color:var(--navy)">
+      <span class="eyebrow" style="color:rgba(255,255,255,.6)">How this works</span>
+      <p style="margin-top:.4rem;color:#fff">Each item below represents an asset, file, or piece of information needed for the project. Provide a link to where the file lives (Drive, Dropbox, Notion) and update the status as it moves Requested → Provided → Approved.</p>
+    </div>
+    ${Object.entries(grouped).filter(([,it])=>it.length).map(([cat, items]) => `
+      <div style="margin-bottom:1.5rem">
+        <h3 style="margin-bottom:.75rem">${esc(cat)} <span class="muted" style="font-size:.85rem;font-family:'Inter',sans-serif;font-weight:400">(${items.length})</span></h3>
+        <div class="grid cols-2">
+          ${items.map(c => `<div class="col-item">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem">
+              <h4 style="flex:1">${esc(c.name)}</h4>${statusPill(c.status)}
+            </div>
+            ${c.notes ? `<div class="desc">${esc(c.notes)}</div>` : ''}
+            ${c.file_url ? `<div style="font-size:.8rem"><a href="${esc(c.file_url)}" target="_blank" rel="noopener">↗ View file</a></div>` : `<div class="muted" style="font-size:.78rem">No file link yet</div>`}
+            ${canEdit() ? `<div class="actions" style="text-align:right;margin-top:.4rem">
+              <button class="btn subtle sm" onclick="openCollateralEditor('${c.id}')">Edit</button>
+              <button class="btn subtle sm danger" onclick="deleteCollateral('${c.id}')">Delete</button>
+            </div>` : ''}
+          </div>`).join('')}
+        </div>
+      </div>`).join('')}`;
+}
+
+/* ===== DECISIONS ========================================================= */
+function viewDecisions(){
+  return `${topbar('Decisions Log', canEdit() ? `<button class="btn" onclick="openDecisionEditor()">+ New Decision</button>` : '')}
+    <div class="card" style="padding:0">
+      <table>
+        <thead><tr><th>Decision</th><th>Owner</th><th>Phase</th><th>Status</th><th>Date</th><th></th></tr></thead>
+        <tbody>${App.data.decisions.map(d => `<tr>
+          <td><div style="font-weight:500">${esc(d.title)}</div>${d.notes?`<div class="task-meta">${esc(d.notes)}</div>`:''}</td>
+          <td>${esc(d.owner||'')}</td>
+          <td>${esc(phaseName(d.phase_id))}</td>
+          <td>${statusPill(d.status)}</td>
+          <td class="muted" style="font-size:.85rem">${fmtDate(d.decided_on)}</td>
+          <td class="actions">${canEdit() ? `<button class="btn subtle sm" onclick="openDecisionEditor('${d.id}')">Edit</button>
+            <button class="btn subtle sm danger" onclick="deleteDecision('${d.id}')">Delete</button>` : ''}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ===== APPROVALS ========================================================= */
+function viewApprovals(){
+  return `${topbar('Reviews & Approvals', canEdit() ? `<button class="btn" onclick="openApprovalEditor()">+ New Approval</button>` : '')}
+    <div class="card" style="padding:0">
+      <table>
+        <thead><tr><th>Gate</th><th>Phase</th><th>Reviewer</th><th>Status</th><th>Date</th><th></th></tr></thead>
+        <tbody>${App.data.approvals.map(a => `<tr>
+          <td><div style="font-weight:500">${esc(a.name)}</div>${a.notes?`<div class="task-meta">${esc(a.notes)}</div>`:''}</td>
+          <td>${esc(phaseName(a.phase_id))}</td>
+          <td>${esc(a.reviewer||'')}</td>
+          <td>${statusPill(a.status)}</td>
+          <td class="muted" style="font-size:.85rem">${fmtDate(a.reviewed_on)}</td>
+          <td class="actions">${canEdit() ? `<button class="btn subtle sm" onclick="openApprovalEditor('${a.id}')">Edit</button>
+            <button class="btn subtle sm danger" onclick="deleteApproval('${a.id}')">Delete</button>` : ''}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ===== KICKOFF =========================================================== */
+function viewKickoff(){
+  const k = App.data.kickoff_items;
+  const done = k.filter(x => x.done).length;
+  const pct = k.length ? Math.round(done/k.length*100) : 0;
+  return `${topbar('Kickoff Checklist', `<span class="muted">${done} / ${k.length} ready · ${pct}%</span>`)}
+    <div class="card">
+      <div class="progress"><div style="width:${pct}%"></div></div>
+      <ul class="checklist" style="margin-top:1rem">
+        ${k.map(item => `<li>
+          <input type="checkbox" ${item.done?'checked':''} ${canEdit()?'':'disabled'} onchange="toggleKickoff('${item.id}')">
+          <span style="${item.done?'text-decoration:line-through;color:var(--muted)':''}">${esc(item.text)}</span>
+        </li>`).join('')}
+      </ul>
+    </div>`;
+}
+
+/* ===== TEAM ============================================================== */
+function viewTeam(){
+  return `${topbar('Project Team', canEdit() ? `<button class="btn" onclick="openTeamEditor()">+ Add Person</button>` : '')}
+    <div class="grid cols-2">
+      ${App.data.team_members.map(t => `<div class="card">
+        <span class="eyebrow">${esc(t.role)}</span>
+        <h3 style="margin-top:.4rem">${esc(t.name) || `<span class="muted" style="font-family:'Inter',sans-serif;font-weight:400;font-style:italic">Unassigned</span>`}</h3>
+        <div class="muted" style="font-size:.85rem">${esc(t.org||'')} ${t.email?`· <a href="mailto:${esc(t.email)}">${esc(t.email)}</a>`:''}</div>
+        ${t.notes?`<p style="margin-top:.6rem;font-size:.9rem">${esc(t.notes)}</p>`:''}
+        ${canEdit() ? `<div class="actions" style="text-align:right;margin-top:.5rem">
+          <button class="btn subtle sm" onclick="openTeamEditor('${t.id}')">Edit</button>
+          <button class="btn subtle sm danger" onclick="deleteTeam('${t.id}')">Remove</button>
+        </div>` : ''}
+      </div>`).join('')}
+    </div>`;
+}
+
+/* ===== KPIs ============================================================== */
+function viewKpis(){
+  return `${topbar('KPIs & Success Metrics', '<span class="muted">Per Section 12 of strategy</span>')}
+    <div class="card"><p class="muted" style="margin-top:0"><strong style="color:var(--navy)">Primary KPI:</strong> Qualified inquiries per quarter — form submissions where the "what we do" and "communication challenge" fields indicate a real fit.</p></div>
+    <div class="card" style="padding:0">
+      <table>
+        <thead><tr><th>Metric</th><th>Target</th><th>Current</th><th>Notes</th><th></th></tr></thead>
+        <tbody>${App.data.kpis.map(k => `<tr>
+          <td style="font-weight:500">${esc(k.name)}</td>
+          <td><span class="pill dark">${esc(k.target||'')}</span></td>
+          <td><input type="text" value="${esc(k.current_value||'')}" placeholder="—" ${canEdit()?'':'disabled'}
+            onchange="updateKpi('${k.id}','current_value',this.value)" style="max-width:120px;padding:.3rem .4rem;font-size:.85rem"></td>
+          <td><input type="text" value="${esc(k.notes||'')}" placeholder="Add a note…" ${canEdit()?'':'disabled'}
+            onchange="updateKpi('${k.id}','notes',this.value)" style="padding:.3rem .4rem;font-size:.85rem"></td>
+          <td class="actions">${canEdit() ? `<button class="btn subtle sm danger" onclick="deleteKpi('${k.id}')">Delete</button>` : ''}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    ${canEdit() ? `<button class="btn secondary" onclick="addKpi()">+ Add KPI</button>` : ''}`;
+}
+
+/* ===== SETTINGS ========================================================== */
+function viewSettings(){
+  const p = App.project;
+  return `${topbar('Project Settings', '')}
+    <div class="card">
+      <h3>Project</h3>
+      <div class="row">
+        <div class="field"><label>Name</label><input type="text" value="${esc(p.name)}" ${canEdit()?'':'disabled'} onchange="updateProject('name',this.value)"></div>
+        <div class="field"><label>Client</label><input type="text" value="${esc(p.client_name||'')}" ${canEdit()?'':'disabled'} onchange="updateProject('client_name',this.value)"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Kickoff date</label><input type="date" value="${esc(p.kickoff_date||'')}" ${canEdit()?'':'disabled'} onchange="updateProject('kickoff_date',this.value)"></div>
+        <div class="field"><label>Target launch</label><input type="date" value="${esc(p.target_launch||'')}" ${canEdit()?'':'disabled'} onchange="updateProject('target_launch',this.value)"></div>
+      </div>
+      <div class="field"><label>Status note</label><textarea ${canEdit()?'':'disabled'} onchange="updateProject('status_note',this.value)">${esc(p.status_note||'')}</textarea></div>
+    </div>
+    ${canAdmin() ? `<div class="card">
+      <h3>Danger zone</h3>
+      <p class="muted">Deleting a project removes all phases, tasks, collateral, and history. This cannot be undone.</p>
+      <button class="btn danger" onclick="deleteProject()">Delete this project</button>
+    </div>` : ''}`;
+}
+
+/* ===== MEMBERS (workspace) =============================================== */
+function viewMembers(){
+  if (!canAdmin()) return `${topbar('Members')}<div class="empty">Owner or PM access required.</div>`;
+  return `${topbar('Workspace Members', `<button class="btn" onclick="openInviteModal()">+ Invite member</button>`)}
+    <div class="card">
+      <h3>Active members</h3>
+      <table>
+        <thead><tr><th>User ID</th><th>Role</th><th>Added</th><th></th></tr></thead>
+        <tbody>${App.data.members.map(m => `<tr>
+          <td style="font-family:monospace;font-size:.78rem">${esc(m.user_id)}${m.user_id===App.user.id?' <span class="pill blue">you</span>':''}</td>
+          <td>
+            ${isOwner() && m.user_id !== App.user.id ? `<select onchange="updateMemberRole('${m.user_id}',this.value)" style="max-width:180px;padding:.3rem .4rem">
+              ${ROLES.map(r => `<option value="${r.key}" ${m.role===r.key?'selected':''}>${r.label}</option>`).join('')}
+            </select>` : rolePill(m.role)}
+          </td>
+          <td class="muted" style="font-size:.85rem">${fmtDate(m.added_at)}</td>
+          <td class="actions">${(isOwner() && m.user_id !== App.user.id) ? `<button class="btn subtle sm danger" onclick="removeMember('${m.user_id}')">Remove</button>` : ''}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    ${App.data.invites.length ? `<div class="card">
+      <h3>Pending invites</h3>
+      <table>
+        <thead><tr><th>Email</th><th>Role</th><th>Sent</th><th></th></tr></thead>
+        <tbody>${App.data.invites.map(i => `<tr>
+          <td>${esc(i.email)}</td>
+          <td>${rolePill(i.role)}</td>
+          <td class="muted" style="font-size:.85rem">${fmtDate(i.created_at)}</td>
+          <td class="actions"><button class="btn subtle sm danger" onclick="deleteInvite('${i.id}')">Cancel</button></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>` : ''}
+    <div class="card" style="background:var(--offwhite)">
+      <h4>How invites work</h4>
+      <p class="muted" style="font-size:.88rem">Invited users receive a Supabase signup email. The invite is auto-redeemed the first time they sign in with that email address — they appear in this workspace with the role you assigned.</p>
+    </div>`;
+}
+
+/* =========================================================================
+   ACTIONS
+   ========================================================================= */
+async function withReload(fn, msg){
+  const r = await fn();
+  if (r.error) return alert(r.error.message);
+  if (msg) await logActivity(msg);
+  await loadProjectData();
+  renderApp();
+}
+
+window.toggleTaskDone = async function(id){
+  const t = App.data.tasks.find(x => x.id === id);
+  const next = t.status === 'Done' ? 'To Do' : 'Done';
+  await withReload(() => sb.from('tasks').update({ status: next }).eq('id', id), `Task "${t.title}" marked ${next}`);
+};
+window.toggleEC = async function(id){
+  const ec = App.data.exit_criteria.find(x => x.id === id);
+  await withReload(() => sb.from('exit_criteria').update({ done: !ec.done }).eq('id', id));
+};
+window.toggleKickoff = async function(id){
+  const k = App.data.kickoff_items.find(x => x.id === id);
+  await withReload(() => sb.from('kickoff_items').update({ done: !k.done }).eq('id', id));
+};
+window.updatePhaseStatus = async function(id, status){
+  const p = App.data.phases.find(x => x.id === id);
+  await withReload(() => sb.from('phases').update({ status }).eq('id', id), `Phase ${p.num} (${p.name}) marked ${status}`);
+};
+window.updateProject = async function(field, value){
+  const upd = {}; upd[field] = value || null;
+  const r = await sb.from('projects').update(upd).eq('id', App.project.id);
+  if (r.error) return alert(r.error.message);
+  Object.assign(App.project, upd);
+};
+window.updateKpi = async function(id, field, value){
+  const upd = {}; upd[field] = value;
+  await withReload(() => sb.from('kpis').update(upd).eq('id', id));
+};
+window.deleteKpi = async function(id){
+  if (!confirm('Delete this KPI?')) return;
+  await withReload(() => sb.from('kpis').delete().eq('id', id));
+};
+window.addKpi = async function(){
+  await withReload(() => sb.from('kpis').insert({ project_id: App.project.id, name:'New metric', target:'' }));
+};
+
+/* Task editor */
+window.openTaskEditor = function(id){
+  const t = id ? App.data.tasks.find(x => x.id === id) : { title:'', phase_id: App.data.phases[0]?.id, status:'To Do', priority:'Medium', assignee:'', due_date:'', notes:'' };
+  openModal(`<h3>${id?'Edit task':'New task'}</h3>
+    <div class="field"><label>Title</label><input id="f-title" type="text" value="${esc(t.title)}"></div>
+    <div class="row">
+      <div class="field"><label>Phase</label><select id="f-phase">${App.data.phases.map(p => `<option value="${p.id}" ${p.id===t.phase_id?'selected':''}>Phase ${p.num} — ${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Assignee</label><input id="f-assignee" type="text" value="${esc(t.assignee||'')}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Status</label><select id="f-status">${TASK_STATUS.map(s => `<option ${s===t.status?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><label>Priority</label><select id="f-priority">${PRIORITY.map(p => `<option ${p===t.priority?'selected':''}>${p}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>Due date</label><input id="f-due" type="date" value="${esc(t.due_date||'')}"></div>
+    <div class="field"><label>Notes</label><textarea id="f-notes">${esc(t.notes||'')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveTask('${id||''}')">${id?'Save':'Create'}</button>
+    </div>`);
+};
+window.saveTask = async function(id){
+  const data = {
+    title: document.getElementById('f-title').value.trim(),
+    phase_id: document.getElementById('f-phase').value,
+    assignee: document.getElementById('f-assignee').value.trim() || null,
+    status: document.getElementById('f-status').value,
+    priority: document.getElementById('f-priority').value,
+    due_date: document.getElementById('f-due').value || null,
+    notes: document.getElementById('f-notes').value.trim() || null
+  };
+  if (!data.title) return alert('Title is required.');
+  let r;
+  if (id) r = await sb.from('tasks').update(data).eq('id', id);
+  else    r = await sb.from('tasks').insert({ ...data, project_id: App.project.id });
+  if (r.error) return alert(r.error.message);
+  await logActivity((id?'Task updated: ':'Task created: ') + '"' + data.title + '"');
+  closeModal();
+  await loadProjectData();
+  renderApp();
+};
+window.deleteTask = async function(id){
+  const t = App.data.tasks.find(x => x.id === id);
+  if (!confirm(`Delete task "${t.title}"?`)) return;
+  await withReload(() => sb.from('tasks').delete().eq('id', id), `Task deleted: "${t.title}"`);
+};
+
+/* Collateral editor */
+window.openCollateralEditor = function(id){
+  const c = id ? App.data.collateral.find(x => x.id === id) : { name:'', category:'Brand Assets', status:'Requested', file_url:'', notes:'' };
+  openModal(`<h3>${id?'Edit collateral item':'New collateral item'}</h3>
+    <div class="field"><label>Name</label><input id="f-name" type="text" value="${esc(c.name)}"></div>
+    <div class="row">
+      <div class="field"><label>Category</label><select id="f-cat">${COLLATERAL_CATEGORIES.map(x => `<option ${x===c.category?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Status</label><select id="f-status">${COLLATERAL_STATUS.map(x => `<option ${x===c.status?'selected':''}>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>File link</label><input id="f-url" type="url" value="${esc(c.file_url||'')}" placeholder="https://"></div>
+    <div class="field"><label>Notes</label><textarea id="f-notes">${esc(c.notes||'')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveCollateral('${id||''}')">${id?'Save':'Create'}</button>
+    </div>`);
+};
+window.saveCollateral = async function(id){
+  const data = {
+    name: document.getElementById('f-name').value.trim(),
+    category: document.getElementById('f-cat').value,
+    status: document.getElementById('f-status').value,
+    file_url: document.getElementById('f-url').value.trim() || null,
+    notes: document.getElementById('f-notes').value.trim() || null
+  };
+  if (!data.name) return alert('Name is required.');
+  let r;
+  if (id) r = await sb.from('collateral').update(data).eq('id', id);
+  else    r = await sb.from('collateral').insert({ ...data, project_id: App.project.id });
+  if (r.error) return alert(r.error.message);
+  closeModal();
+  await loadProjectData();
+  renderApp();
+};
+window.deleteCollateral = async function(id){
+  const c = App.data.collateral.find(x => x.id === id);
+  if (!confirm(`Delete "${c.name}"?`)) return;
+  await withReload(() => sb.from('collateral').delete().eq('id', id));
+};
+
+/* Decision editor */
+window.openDecisionEditor = function(id){
+  const d = id ? App.data.decisions.find(x => x.id === id) : { title:'', owner:'', phase_id: App.data.phases[0]?.id, status:'Pending', decided_on:'', notes:'' };
+  openModal(`<h3>${id?'Edit decision':'New decision'}</h3>
+    <div class="field"><label>Decision</label><input id="f-title" type="text" value="${esc(d.title)}"></div>
+    <div class="row">
+      <div class="field"><label>Owner</label><input id="f-owner" type="text" value="${esc(d.owner||'')}"></div>
+      <div class="field"><label>Phase</label><select id="f-phase">${App.data.phases.map(p => `<option value="${p.id}" ${p.id===d.phase_id?'selected':''}>Phase ${p.num} — ${esc(p.name)}</option>`).join('')}</select></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Status</label><select id="f-status">${DECISION_STATUS.map(s => `<option ${s===d.status?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><label>Date</label><input id="f-date" type="date" value="${esc(d.decided_on||'')}"></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="f-notes">${esc(d.notes||'')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveDecision('${id||''}')">${id?'Save':'Create'}</button>
+    </div>`);
+};
+window.saveDecision = async function(id){
+  const data = {
+    title: document.getElementById('f-title').value.trim(),
+    owner: document.getElementById('f-owner').value.trim() || null,
+    phase_id: document.getElementById('f-phase').value || null,
+    status: document.getElementById('f-status').value,
+    decided_on: document.getElementById('f-date').value || null,
+    notes: document.getElementById('f-notes').value.trim() || null
+  };
+  if (!data.title) return alert('Title is required.');
+  let r;
+  if (id) r = await sb.from('decisions').update(data).eq('id', id);
+  else    r = await sb.from('decisions').insert({ ...data, project_id: App.project.id });
+  if (r.error) return alert(r.error.message);
+  closeModal();
+  await loadProjectData();
+  renderApp();
+};
+window.deleteDecision = async function(id){
+  const d = App.data.decisions.find(x => x.id === id);
+  if (!confirm(`Delete decision "${d.title}"?`)) return;
+  await withReload(() => sb.from('decisions').delete().eq('id', id));
+};
+
+/* Approval editor */
+window.openApprovalEditor = function(id){
+  const a = id ? App.data.approvals.find(x => x.id === id) : { name:'', phase_id: App.data.phases[0]?.id, status:'Not Submitted', reviewer:'', reviewed_on:'', notes:'' };
+  openModal(`<h3>${id?'Edit approval':'New approval'}</h3>
+    <div class="field"><label>Name</label><input id="f-name" type="text" value="${esc(a.name)}"></div>
+    <div class="row">
+      <div class="field"><label>Phase</label><select id="f-phase">${App.data.phases.map(p => `<option value="${p.id}" ${p.id===a.phase_id?'selected':''}>Phase ${p.num} — ${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>Reviewer</label><input id="f-reviewer" type="text" value="${esc(a.reviewer||'')}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Status</label><select id="f-status">${APPROVAL_STATUS.map(s => `<option ${s===a.status?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="field"><label>Date</label><input id="f-date" type="date" value="${esc(a.reviewed_on||'')}"></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="f-notes">${esc(a.notes||'')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveApproval('${id||''}')">${id?'Save':'Create'}</button>
+    </div>`);
+};
+window.saveApproval = async function(id){
+  const data = {
+    name: document.getElementById('f-name').value.trim(),
+    phase_id: document.getElementById('f-phase').value || null,
+    reviewer: document.getElementById('f-reviewer').value.trim() || null,
+    status: document.getElementById('f-status').value,
+    reviewed_on: document.getElementById('f-date').value || null,
+    notes: document.getElementById('f-notes').value.trim() || null
+  };
+  if (!data.name) return alert('Name is required.');
+  let r;
+  if (id) r = await sb.from('approvals').update(data).eq('id', id);
+  else    r = await sb.from('approvals').insert({ ...data, project_id: App.project.id });
+  if (r.error) return alert(r.error.message);
+  closeModal();
+  await loadProjectData();
+  renderApp();
+};
+window.deleteApproval = async function(id){
+  const a = App.data.approvals.find(x => x.id === id);
+  if (!confirm(`Delete approval "${a.name}"?`)) return;
+  await withReload(() => sb.from('approvals').delete().eq('id', id));
+};
+
+/* Team editor */
+window.openTeamEditor = function(id){
+  const t = id ? App.data.team_members.find(x => x.id === id) : { role:'', name:'', org:'', email:'', notes:'' };
+  openModal(`<h3>${id?'Edit team member':'Add team member'}</h3>
+    <div class="row">
+      <div class="field"><label>Role</label><input id="f-role" type="text" value="${esc(t.role)}"></div>
+      <div class="field"><label>Org</label><input id="f-org" type="text" value="${esc(t.org||'')}"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Name</label><input id="f-name" type="text" value="${esc(t.name||'')}"></div>
+      <div class="field"><label>Email</label><input id="f-email" type="email" value="${esc(t.email||'')}"></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="f-notes">${esc(t.notes||'')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveTeam('${id||''}')">${id?'Save':'Create'}</button>
+    </div>`);
+};
+window.saveTeam = async function(id){
+  const data = {
+    role: document.getElementById('f-role').value.trim(),
+    name: document.getElementById('f-name').value.trim() || null,
+    org: document.getElementById('f-org').value.trim() || null,
+    email: document.getElementById('f-email').value.trim() || null,
+    notes: document.getElementById('f-notes').value.trim() || null
+  };
+  if (!data.role) return alert('Role is required.');
+  let r;
+  if (id) r = await sb.from('team_members').update(data).eq('id', id);
+  else    r = await sb.from('team_members').insert({ ...data, project_id: App.project.id });
+  if (r.error) return alert(r.error.message);
+  closeModal();
+  await loadProjectData();
+  renderApp();
+};
+window.deleteTeam = async function(id){
+  const t = App.data.team_members.find(x => x.id === id);
+  if (!confirm(`Remove "${t.role}"?`)) return;
+  await withReload(() => sb.from('team_members').delete().eq('id', id));
+};
+
+/* Project delete */
+window.deleteProject = async function(){
+  if (!confirm(`Delete project "${App.project.name}"? This cannot be undone.`)) return;
+  if (!confirm('Really delete? All tasks, collateral, decisions, approvals, and history will be removed.')) return;
+  const r = await sb.from('projects').delete().eq('id', App.project.id);
+  if (r.error) return alert(r.error.message);
+  App.project = null;
+  await loadProjects();
+  if (App.projects.length) {
+    App.project = App.projects[0];
+    await loadProjectData();
+  }
+  renderApp();
+};
+
+/* Members */
+window.openInviteModal = function(){
+  openModal(`<h3>Invite member</h3>
+    <p class="muted" style="font-size:.85rem">The user will gain access the first time they sign in with this email address.</p>
+    <div class="field"><label>Email</label><input id="f-email" type="email"></div>
+    <div class="field"><label>Role</label><select id="f-role">
+      ${ROLES.map(r => `<option value="${r.key}" ${r.key==='client_view'?'selected':''}>${r.label}</option>`).join('')}
+    </select></div>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="sendInvite()">Send invite</button>
+    </div>`);
+};
+window.sendInvite = async function(){
+  const email = document.getElementById('f-email').value.trim().toLowerCase();
+  const role = document.getElementById('f-role').value;
+  if (!email) return alert('Email is required.');
+  const r = await sb.from('workspace_invites').insert({
+    workspace_id: App.workspace.id, email, role, invited_by: App.user.id
+  });
+  if (r.error) return alert(r.error.message);
+  closeModal();
+  await loadMembers();
+  renderApp();
+};
+window.deleteInvite = async function(id){
+  if (!confirm('Cancel this invite?')) return;
+  await sb.from('workspace_invites').delete().eq('id', id);
+  await loadMembers();
+  renderApp();
+};
+window.updateMemberRole = async function(uid, role){
+  const r = await sb.from('workspace_members').update({ role }).eq('workspace_id', App.workspace.id).eq('user_id', uid);
+  if (r.error) return alert(r.error.message);
+  await loadMembers();
+  renderApp();
+};
+window.removeMember = async function(uid){
+  if (!confirm('Remove this member from the workspace?')) return;
+  const r = await sb.from('workspace_members').delete().eq('workspace_id', App.workspace.id).eq('user_id', uid);
+  if (r.error) return alert(r.error.message);
+  await loadMembers();
+  renderApp();
+};
+
+/* ===== BOOT ============================================================== */
+boot();
+</script>
+</body>
+</html>
