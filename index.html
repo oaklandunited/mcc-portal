@@ -177,14 +177,20 @@ const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANO
 /* ----- STATE ------------------------------------------------------------- */
 const App = {
   user: null,
+  isSuperAdmin: false,
   workspaces: [],   // [{id, name, slug, my_role}]
   workspace: null,  // selected workspace object
   projects: [],     // projects in current workspace
   project: null,    // selected project
+  templates: [],    // available project templates (loaded once)
   data: {           // hydrated per project
     phases: [], exit_criteria: [], tasks: [], collateral: [],
     decisions: [], approvals: [], kickoff_items: [], kpis: [],
     team_members: [], activity_log: [], members: [], invites: []
+  },
+  admin: {          // cross-workspace data, loaded on demand for super admins
+    workspaces: [], members: [], projects: [], templates: [],
+    editingTemplate: null
   },
   view: 'dashboard',
   filters: { phase:'all', status:'all', assignee:'all', search:'' },
@@ -254,8 +260,17 @@ async function boot(){
   if (!session) { renderAuth(); return; }
   App.user = session.user;
 
+  // Detect super-admin status + load templates in parallel
+  await Promise.all([checkSuperAdmin(), loadTemplates()]);
+
   await loadWorkspaces();
-  if (!App.workspaces.length) { renderOnboardingWorkspace(); return; }
+  if (!App.workspaces.length && !App.isSuperAdmin) { renderOnboardingWorkspace(); return; }
+  if (!App.workspaces.length && App.isSuperAdmin) {
+    // Super admin with no workspaces yet — go straight to admin dashboard
+    App.view = 'adminDashboard';
+    renderApp();
+    return;
+  }
 
   // pick last-used or first workspace
   const lastWs = localStorage.getItem('lastWorkspace');
@@ -367,6 +382,19 @@ async function acceptPendingInvites(){
   }
 }
 
+async function checkSuperAdmin(){
+  const { data } = await sb.from('app_admins')
+    .select('user_id').eq('user_id', App.user.id).maybeSingle();
+  App.isSuperAdmin = !!data;
+}
+
+async function loadTemplates(){
+  const { data, error } = await sb.from('project_templates')
+    .select('*').eq('is_active', true).order('name');
+  if (error) { console.warn('loadTemplates', error); App.templates = []; return; }
+  App.templates = data || [];
+}
+
 async function loadProjects(){
   const { data, error } = await sb.from('projects')
     .select('*').eq('workspace_id', App.workspace.id).order('created_at');
@@ -438,8 +466,7 @@ function renderOnboardingWorkspace(){
 window.createWorkspace = async function(){
   const name = document.getElementById('ws-name').value.trim();
   if (!name) return alert('Workspace name is required.');
-  const slug = slugify(name) + '-' + Math.random().toString(36).slice(2,6);
-  const { data, error } = await sb.from('workspaces').insert({ name, slug, created_by: App.user.id }).select().single();
+  const { data, error } = await sb.rpc('create_workspace', { p_name: name });
   if (error) return alert(error.message);
   localStorage.setItem('lastWorkspace', data.id);
   await boot();
@@ -473,8 +500,8 @@ function renderApp(){
           ${canAdmin() ? `<button class="btn subtle sm" style="width:100%;margin-top:.4rem" onclick="newProjectModal()">+ New project</button>` : ''}
         </div>
 
-        ${App.project ? `
-          <nav class="menu" id="menu">
+        <nav class="menu" id="menu">
+          ${App.project ? `
             <button data-view="dashboard" class="${App.view==='dashboard'?'active':''}">Dashboard</button>
             <button data-view="phases" class="${App.view==='phases'?'active':''}">Phases &amp; Timeline</button>
             <button data-view="tasks" class="${App.view==='tasks'?'active':''}">Tasks</button>
@@ -488,7 +515,16 @@ function renderApp(){
             <button data-view="settings" class="${App.view==='settings'?'active':''}">Settings</button>
             ${canAdmin() ? `<div class="menu-section">Workspace</div>
               <button data-view="members" class="${App.view==='members'?'active':''}">Members</button>` : ''}
-          </nav>` : ''}
+          ` : ''}
+          ${App.isSuperAdmin ? `
+            <div class="menu-section">Admin</div>
+            <button data-view="adminDashboard" class="${App.view==='adminDashboard'?'active':''}">Admin Dashboard</button>
+            <button data-view="adminWorkspaces" class="${App.view==='adminWorkspaces'?'active':''}">All Workspaces</button>
+            <button data-view="adminMembers" class="${App.view==='adminMembers'?'active':''}">All Members</button>
+            <button data-view="adminTemplates" class="${App.view==='adminTemplates'?'active':''}">Templates</button>
+            <button data-view="adminAdmins" class="${App.view==='adminAdmins'?'active':''}">Super Admins</button>
+          ` : ''}
+        </nav>
 
         <div class="user-block">
           <div class="email">${esc(App.user.email)}</div>
@@ -499,21 +535,33 @@ function renderApp(){
       <main id="main"></main>
     </div>`;
 
-  if (App.project) {
-    document.getElementById('menu').addEventListener('click', e => {
+  // Menu click handler — works whether a project is selected or not
+  const menuEl = document.getElementById('menu');
+  if (menuEl) {
+    menuEl.addEventListener('click', e => {
       const b = e.target.closest('button[data-view]');
       if (!b) return;
       App.view = b.dataset.view;
       renderApp();
     });
+  }
+
+  const isAdminView = App.view && App.view.startsWith('admin');
+  if (App.project || isAdminView) {
     renderView();
-  } else {
+  } else if (App.workspace) {
     document.getElementById('main').innerHTML = `
       <div class="topbar"><div class="titleblock"><span class="eyebrow">${esc(App.workspace.name)}</span><h1>No projects yet</h1></div></div>
       ${canAdmin() ? `<div class="card">
-        <p class="muted">Create your first project. The Mecoy template ships with all phases, exit criteria, default tasks, and a collateral checklist already populated.</p>
+        <p class="muted">Create your first project. Pick a template to pre-populate phases, tasks, collateral, decisions, and KPIs — or start from a blank project.</p>
         <button class="btn" onclick="newProjectModal()">+ New project</button>
       </div>` : `<div class="empty">No projects in this workspace yet. Ask an Owner or Project Manager to create one.</div>`}`;
+  } else {
+    document.getElementById('main').innerHTML = `
+      <div class="topbar"><div class="titleblock"><span class="eyebrow">Admin</span><h1>Welcome, super admin</h1></div></div>
+      <div class="card">
+        <p class="muted">You don't belong to any workspaces yet, but you have super admin access. Use the Admin menu to manage all workspaces, members, and templates across the platform.</p>
+      </div>`;
   }
 }
 
@@ -550,8 +598,7 @@ window.newWorkspaceModal = function(){
 window.createWorkspaceFromModal = async function(){
   const name = document.getElementById('f-name').value.trim();
   if (!name) return alert('Name is required.');
-  const slug = slugify(name) + '-' + Math.random().toString(36).slice(2,6);
-  const { data, error } = await sb.from('workspaces').insert({ name, slug, created_by: App.user.id }).select().single();
+  const { data, error } = await sb.rpc('create_workspace', { p_name: name });
   if (error) return alert(error.message);
   closeModal();
   localStorage.setItem('lastWorkspace', data.id);
@@ -559,20 +606,22 @@ window.createWorkspaceFromModal = async function(){
 };
 
 window.newProjectModal = function(){
-  if (!canAdmin()) return alert('You need Owner or PM role to create projects.');
+  if (!canAdmin() && !App.isSuperAdmin) return alert('You need Owner or PM role to create projects.');
+  const tpls = App.templates.length ? App.templates : [{ key:'', name:'(no template — empty project)' }];
   openModal(`
     <h3>New project</h3>
-    <div class="field"><label>Project name</label><input id="f-name" type="text" placeholder="e.g. Mecoy Website Redesign"></div>
-    <div class="field"><label>Client (optional)</label><input id="f-client" type="text" placeholder="e.g. Mecoy Communications"></div>
+    <div class="field"><label>Project name</label><input id="f-name" type="text" placeholder="e.g. Website Redesign"></div>
+    <div class="field"><label>Client (optional)</label><input id="f-client" type="text" placeholder="e.g. Acme Corp"></div>
     <div class="field"><label>Template</label>
       <select id="f-tpl">
-        <option value="mecoy_website">Website redesign (Mecoy template)</option>
+        <option value="">(no template — empty project)</option>
+        ${tpls.filter(t => t.key).map(t => `<option value="${esc(t.key)}">${esc(t.name)}</option>`).join('')}
       </select>
     </div>
-    <p class="muted" style="font-size:.8rem">The template ships with all phases, exit criteria, ~26 default tasks, ~22 collateral items, decisions, approvals, kickoff checklist, and KPI targets pre-populated.</p>
+    <p class="muted" style="font-size:.8rem">Templates pre-populate phases, exit criteria, tasks, collateral, decisions, approvals, kickoff items, KPIs, and team roles. Super admins can manage templates from the Admin section.</p>
     <div class="modal-actions">
       <button class="btn subtle" onclick="closeModal()">Cancel</button>
-      <button class="btn" onclick="createProject()">Create &amp; seed</button>
+      <button class="btn" onclick="createProject()">Create</button>
     </div>`);
   setTimeout(() => document.getElementById('f-name').focus(), 50);
 };
@@ -584,13 +633,13 @@ window.createProject = async function(){
   const slug = slugify(name) + '-' + Math.random().toString(36).slice(2,6);
   const { data, error } = await sb.rpc('create_project_with_template', {
     p_workspace: App.workspace.id, p_name: name, p_slug: slug,
-    p_client_name: client || name, p_template: tpl
+    p_client_name: client || name, p_template: tpl || null
   });
   if (error) return alert(error.message);
   closeModal();
   await loadProjects();
   App.project = App.projects.find(p => p.id === data);
-  localStorage.setItem('lastProject:' + App.workspace.id, App.project.id);
+  if (App.project) localStorage.setItem('lastProject:' + App.workspace.id, App.project.id);
   await loadProjectData();
   renderApp();
 };
@@ -604,9 +653,19 @@ async function renderView(){
     dashboard: viewDashboard, phases: viewPhases, tasks: viewTasks,
     collateral: viewCollateral, decisions: viewDecisions, approvals: viewApprovals,
     kickoff: viewKickoff, team: viewTeam, kpis: viewKpis,
-    settings: viewSettings, members: viewMembers
+    settings: viewSettings, members: viewMembers,
+    adminDashboard: viewAdminDashboard,
+    adminWorkspaces: viewAdminWorkspaces,
+    adminMembers: viewAdminMembers,
+    adminTemplates: viewAdminTemplates,
+    adminTemplateEdit: viewAdminTemplateEdit,
+    adminAdmins: viewAdminAdmins
   };
   if (App.view === 'members') { await loadMembers(); }
+  if (App.view && App.view.startsWith('admin')) {
+    if (!App.isSuperAdmin) { App.view = 'dashboard'; return renderView(); }
+    await loadAdminData(App.view);
+  }
   m.innerHTML = (fns[App.view] || viewDashboard)();
 }
 
@@ -977,12 +1036,45 @@ function viewSettings(){
       </div>
       <div class="field"><label>Status note</label><textarea ${canEdit()?'':'disabled'} onchange="updateProject('status_note',this.value)">${esc(p.status_note||'')}</textarea></div>
     </div>
+    ${App.isSuperAdmin ? `<div class="card">
+      <h3>Templates</h3>
+      <p class="muted">Snapshot this project's current structure (phases, exit criteria, tasks, collateral, decisions, approvals, kickoff items, KPIs, team roles) as a reusable template for future projects.</p>
+      <button class="btn secondary" onclick="openSaveAsTemplateModal()">Save as template</button>
+    </div>` : ''}
     ${canAdmin() ? `<div class="card">
       <h3>Danger zone</h3>
       <p class="muted">Deleting a project removes all phases, tasks, collateral, and history. This cannot be undone.</p>
       <button class="btn danger" onclick="deleteProject()">Delete this project</button>
     </div>` : ''}`;
 }
+
+window.openSaveAsTemplateModal = function(){
+  openModal(`<h3>Save project as template</h3>
+    <div class="field"><label>Template name</label><input id="f-name" type="text" value="${esc(App.project.name)} template" placeholder="e.g. Brand Identity Engagement"></div>
+    <div class="field"><label>Key (slug)</label><input id="f-key" type="text" placeholder="e.g. brand_identity"></div>
+    <div class="field"><label>Description (optional)</label><textarea id="f-desc"></textarea></div>
+    <p class="muted" style="font-size:.8rem">All phases, exit criteria, tasks, collateral, decisions, approvals, kickoff items, KPIs, and team roles will be copied into the new template. Status fields and dates carry over so the template captures the project's structure, not its current progress.</p>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveAsTemplate()">Create template</button>
+    </div>`);
+};
+window.saveAsTemplate = async function(){
+  const name = document.getElementById('f-name').value.trim();
+  let key = document.getElementById('f-key').value.trim().toLowerCase().replace(/[^a-z0-9_]+/g,'_');
+  const desc = document.getElementById('f-desc').value.trim() || null;
+  if (!name || !key) return alert('Name and key are required.');
+  const { data, error } = await sb.rpc('clone_project_to_template', {
+    p_project: App.project.id,
+    p_template_key: key,
+    p_template_name: name,
+    p_description: desc
+  });
+  if (error) return alert(error.message);
+  closeModal();
+  await loadTemplates();
+  alert('Template "' + name + '" created. Find it in Admin → Templates.');
+};
 
 /* ===== MEMBERS (workspace) =============================================== */
 function viewMembers(){
@@ -1337,6 +1429,269 @@ window.removeMember = async function(uid){
   const r = await sb.from('workspace_members').delete().eq('workspace_id', App.workspace.id).eq('user_id', uid);
   if (r.error) return alert(r.error.message);
   await loadMembers();
+  renderApp();
+};
+
+/* =========================================================================
+   ADMIN DATA + VIEWS
+   ========================================================================= */
+async function loadAdminData(view){
+  if (view === 'adminDashboard' || view === 'adminWorkspaces') {
+    const { data: ws } = await sb.from('workspaces').select('*').order('created_at', { ascending:false });
+    App.admin.workspaces = ws || [];
+    const { data: projs } = await sb.from('projects').select('id, workspace_id, name, client_name, created_at');
+    App.admin.projects = projs || [];
+  }
+  if (view === 'adminDashboard' || view === 'adminMembers') {
+    const { data: mems } = await sb.from('workspace_members').select('*');
+    App.admin.members = mems || [];
+    if (!App.admin.workspaces.length) {
+      const { data: ws } = await sb.from('workspaces').select('*');
+      App.admin.workspaces = ws || [];
+    }
+  }
+  if (view === 'adminTemplates' || view === 'adminTemplateEdit') {
+    const { data: tpls } = await sb.from('project_templates').select('*').order('name');
+    App.admin.templates = tpls || [];
+  }
+  if (view === 'adminAdmins') {
+    const { data: admins } = await sb.from('app_admins').select('*').order('granted_at');
+    App.admin.admins = admins || [];
+  }
+}
+
+function viewAdminDashboard(){
+  const wsCount = App.admin.workspaces.length;
+  const projCount = App.admin.projects.length;
+  const memCount = App.admin.members.length;
+  const tplCount = App.templates.length;
+  return `${topbar('Admin Dashboard', '<span class="muted">Cross-workspace overview</span>')}
+    <div class="grid cols-4">
+      ${statCard('Workspaces', wsCount, 'total across all clients')}
+      ${statCard('Projects', projCount, 'all-time across all workspaces')}
+      ${statCard('Memberships', memCount, 'unique workspace seats')}
+      ${statCard('Templates', tplCount, 'active project templates')}
+    </div>
+    <div class="grid cols-2">
+      <div class="card">
+        <span class="eyebrow">Recent workspaces</span>
+        <h2 style="margin-top:.4rem">Latest 5</h2>
+        ${App.admin.workspaces.slice(0,5).length ? `<table>
+          <thead><tr><th>Name</th><th>Created</th></tr></thead>
+          <tbody>${App.admin.workspaces.slice(0,5).map(w => `<tr>
+            <td>${esc(w.name)}</td>
+            <td class="muted" style="font-size:.85rem">${fmtDate(w.created_at)}</td>
+          </tr>`).join('')}</tbody>
+        </table>` : '<div class="empty">No workspaces yet.</div>'}
+      </div>
+      <div class="card">
+        <span class="eyebrow">Quick links</span>
+        <h2 style="margin-top:.4rem">Admin actions</h2>
+        <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem">
+          <button class="btn secondary" onclick="App.view='adminWorkspaces';renderApp()">Manage all workspaces</button>
+          <button class="btn secondary" onclick="App.view='adminMembers';renderApp()">Manage all members</button>
+          <button class="btn secondary" onclick="App.view='adminTemplates';renderApp()">Manage templates</button>
+          <button class="btn secondary" onclick="App.view='adminAdmins';renderApp()">Manage super admins</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function viewAdminWorkspaces(){
+  const projByWs = {};
+  App.admin.projects.forEach(p => { projByWs[p.workspace_id] = (projByWs[p.workspace_id]||0) + 1; });
+  const memByWs = {};
+  App.admin.members.forEach(m => { memByWs[m.workspace_id] = (memByWs[m.workspace_id]||0) + 1; });
+
+  return `${topbar('All Workspaces', `<span class="muted">${App.admin.workspaces.length} total</span>`)}
+    <div class="card" style="padding:0">
+      <table>
+        <thead><tr><th>Name</th><th>Slug</th><th>Projects</th><th>Members</th><th>Created</th><th></th></tr></thead>
+        <tbody>${App.admin.workspaces.map(w => `<tr>
+          <td style="font-weight:500">${esc(w.name)}</td>
+          <td class="muted" style="font-size:.8rem;font-family:monospace">${esc(w.slug)}</td>
+          <td>${projByWs[w.id] || 0}</td>
+          <td>${memByWs[w.id] || 0}</td>
+          <td class="muted" style="font-size:.85rem">${fmtDate(w.created_at)}</td>
+          <td class="actions">
+            <button class="btn subtle sm" onclick="adminEnterWorkspace('${w.id}')">Enter</button>
+            <button class="btn subtle sm danger" onclick='adminDeleteWorkspace(${JSON.stringify(w.id)}, ${JSON.stringify(w.name)})'>Delete</button>
+          </td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+window.adminEnterWorkspace = async function(id){
+  // Even if you're not a member, RLS lets super admins read; join as owner so it shows up in your switcher.
+  await sb.from('workspace_members').insert({ workspace_id: id, user_id: App.user.id, role: 'owner' });
+  localStorage.setItem('lastWorkspace', id);
+  App.view = 'dashboard';
+  await boot();
+};
+window.adminDeleteWorkspace = async function(id, name){
+  if (!confirm(`Delete workspace "${name}" and ALL its projects? This cannot be undone.`)) return;
+  if (!confirm('Really delete? All data inside this workspace will be permanently removed.')) return;
+  const { error } = await sb.from('workspaces').delete().eq('id', id);
+  if (error) return alert(error.message);
+  await loadAdminData('adminWorkspaces');
+  renderApp();
+};
+
+function viewAdminMembers(){
+  const wsById = {};
+  App.admin.workspaces.forEach(w => { wsById[w.id] = w; });
+  return `${topbar('All Members', `<span class="muted">${App.admin.members.length} memberships</span>`)}
+    <div class="card" style="padding:0">
+      <table>
+        <thead><tr><th>User ID</th><th>Workspace</th><th>Role</th><th>Added</th></tr></thead>
+        <tbody>${App.admin.members.map(m => `<tr>
+          <td style="font-family:monospace;font-size:.78rem">${esc(m.user_id)}${m.user_id===App.user.id?' <span class="pill blue">you</span>':''}</td>
+          <td>${esc(wsById[m.workspace_id]?.name || m.workspace_id)}</td>
+          <td>${rolePill(m.role)}</td>
+          <td class="muted" style="font-size:.85rem">${fmtDate(m.added_at)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+function viewAdminTemplates(){
+  return `${topbar('Project Templates', `<button class="btn" onclick="openTemplateCreateModal()">+ New template</button>`)}
+    <div class="card" style="background:var(--offwhite)">
+      <p class="muted" style="margin:0;font-size:.88rem">Templates are reusable blueprints for new projects. Build them from a form below, or clone any existing project's structure into a template (Project Settings → Save as template).</p>
+    </div>
+    <div class="card" style="padding:0">
+      <table>
+        <thead><tr><th>Name</th><th>Key</th><th>Type</th><th>Active</th><th>Created</th><th></th></tr></thead>
+        <tbody>${App.admin.templates.map(t => `<tr>
+          <td>
+            <div style="font-weight:500">${esc(t.name)}</div>
+            ${t.description ? `<div class="task-meta">${esc(t.description)}</div>` : ''}
+          </td>
+          <td class="muted" style="font-size:.8rem;font-family:monospace">${esc(t.key)}</td>
+          <td>${t.is_system ? '<span class="pill dark">system</span>' : '<span class="pill">custom</span>'}</td>
+          <td>${t.is_active ? '<span class="pill green">Yes</span>' : '<span class="pill amber">No</span>'}</td>
+          <td class="muted" style="font-size:.85rem">${fmtDate(t.created_at)}</td>
+          <td class="actions">
+            <button class="btn subtle sm" onclick="openTemplateEditor('${t.id}')">Edit</button>
+            <button class="btn subtle sm" onclick="toggleTemplateActive('${t.id}',${t.is_active})">${t.is_active?'Deactivate':'Activate'}</button>
+            ${!t.is_system ? `<button class="btn subtle sm danger" onclick='deleteTemplate(${JSON.stringify(t.id)}, ${JSON.stringify(t.name)})'>Delete</button>` : ''}
+          </td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+window.openTemplateCreateModal = function(){
+  openModal(`<h3>New template</h3>
+    <div class="field"><label>Name</label><input id="f-name" type="text" placeholder="e.g. Brand Identity Engagement"></div>
+    <div class="field"><label>Key (slug)</label><input id="f-key" type="text" placeholder="e.g. brand_identity"></div>
+    <div class="field"><label>Description</label><textarea id="f-desc" placeholder="What kind of engagement this template is for"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveNewTemplate()">Create</button>
+    </div>`);
+};
+window.saveNewTemplate = async function(){
+  const name = document.getElementById('f-name').value.trim();
+  const key = document.getElementById('f-key').value.trim().toLowerCase().replace(/[^a-z0-9_]+/g,'_');
+  const desc = document.getElementById('f-desc').value.trim() || null;
+  if (!name || !key) return alert('Name and key are required.');
+  const { data, error } = await sb.from('project_templates').insert({ name, key, description: desc, is_active: true }).select().single();
+  if (error) return alert(error.message);
+  closeModal();
+  App.admin.editingTemplate = data.id;
+  App.view = 'adminTemplateEdit';
+  await loadTemplates();   // refresh the main templates cache too
+  renderApp();
+};
+window.openTemplateEditor = async function(id){
+  App.admin.editingTemplate = id;
+  App.view = 'adminTemplateEdit';
+  renderApp();
+};
+window.toggleTemplateActive = async function(id, currentlyActive){
+  const { error } = await sb.from('project_templates').update({ is_active: !currentlyActive }).eq('id', id);
+  if (error) return alert(error.message);
+  await loadAdminData('adminTemplates');
+  await loadTemplates();
+  renderApp();
+};
+window.deleteTemplate = async function(id, name){
+  if (!confirm(`Delete template "${name}"? Existing projects created from it are unaffected. Cannot be undone.`)) return;
+  const { error } = await sb.from('project_templates').delete().eq('id', id);
+  if (error) return alert(error.message);
+  await loadAdminData('adminTemplates');
+  await loadTemplates();
+  renderApp();
+};
+
+async function viewAdminTemplateEdit(){
+  // (Called synchronously via the dispatcher, but we need to fetch fresh data each time)
+  return viewAdminTemplateEditSync();
+}
+function viewAdminTemplateEditSync(){
+  const id = App.admin.editingTemplate;
+  const tpl = App.admin.templates.find(t => t.id === id);
+  if (!tpl) return `${topbar('Template not found')}<div class="empty">Pick a template from the list.</div>`;
+  return `${topbar('Edit Template — ' + tpl.name, `<button class="btn subtle" onclick="App.view='adminTemplates';renderApp()">&larr; Back to templates</button>`)}
+    <div class="card">
+      <div class="row">
+        <div class="field"><label>Name</label><input type="text" value="${esc(tpl.name)}" onchange="updateTemplateField('${tpl.id}','name',this.value)"></div>
+        <div class="field"><label>Key</label><input type="text" value="${esc(tpl.key)}" disabled style="opacity:.6"></div>
+      </div>
+      <div class="field"><label>Description</label><textarea onchange="updateTemplateField('${tpl.id}','description',this.value)">${esc(tpl.description||'')}</textarea></div>
+      <div class="muted" style="font-size:.8rem">Edit the template's phases, tasks, collateral, etc. directly in Supabase via the table editor (template_phases, template_tasks, template_collateral, template_decisions, template_approvals, template_kickoff_items, template_kpis, template_team_roles). A full visual editor is on the roadmap. The fastest path right now: clone any existing project to a new template (Project → Settings → Save as template), then trim/edit in Supabase.</div>
+    </div>`;
+}
+window.updateTemplateField = async function(id, field, value){
+  const upd = {}; upd[field] = value;
+  const { error } = await sb.from('project_templates').update(upd).eq('id', id);
+  if (error) alert(error.message);
+};
+
+function viewAdminAdmins(){
+  return `${topbar('Super Admins', `<button class="btn" onclick="openAddAdminModal()">+ Grant super admin</button>`)}
+    <div class="card" style="background:var(--offwhite)">
+      <p class="muted" style="margin:0;font-size:.88rem">Super admins can see every workspace, manage members across all orgs, and create/edit project templates. To grant: enter a user's UUID (find it in Authentication → Users in Supabase).</p>
+    </div>
+    <div class="card" style="padding:0">
+      <table>
+        <thead><tr><th>User ID</th><th>Granted</th><th>Notes</th><th></th></tr></thead>
+        <tbody>${(App.admin.admins||[]).map(a => `<tr>
+          <td style="font-family:monospace;font-size:.78rem">${esc(a.user_id)}${a.user_id===App.user.id?' <span class="pill blue">you</span>':''}</td>
+          <td class="muted" style="font-size:.85rem">${fmtDate(a.granted_at)}</td>
+          <td>${esc(a.notes||'')}</td>
+          <td class="actions">${a.user_id !== App.user.id ? `<button class="btn subtle sm danger" onclick="revokeAdmin('${a.user_id}')">Revoke</button>` : '<span class="muted" style="font-size:.78rem">cannot revoke self</span>'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+window.openAddAdminModal = function(){
+  openModal(`<h3>Grant super admin</h3>
+    <div class="field"><label>User UUID</label><input id="f-uid" type="text" placeholder="e.g. 087e7a20-a5bd-4c03-b0e6-35f806ca01e3"></div>
+    <div class="field"><label>Notes (optional)</label><textarea id="f-notes" placeholder="Why grant access?"></textarea></div>
+    <p class="muted" style="font-size:.8rem">Find user IDs in Supabase → Authentication → Users. The user must already have an account.</p>
+    <div class="modal-actions">
+      <button class="btn subtle" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="grantAdmin()">Grant</button>
+    </div>`);
+};
+window.grantAdmin = async function(){
+  const uid = document.getElementById('f-uid').value.trim();
+  const notes = document.getElementById('f-notes').value.trim() || null;
+  if (!/^[0-9a-f-]{36}$/i.test(uid)) return alert('That doesn\'t look like a UUID.');
+  const { error } = await sb.from('app_admins').insert({ user_id: uid, granted_by: App.user.id, notes });
+  if (error) return alert(error.message);
+  closeModal();
+  await loadAdminData('adminAdmins');
+  renderApp();
+};
+window.revokeAdmin = async function(uid){
+  if (!confirm('Revoke super admin from this user?')) return;
+  const { error } = await sb.from('app_admins').delete().eq('user_id', uid);
+  if (error) return alert(error.message);
+  await loadAdminData('adminAdmins');
   renderApp();
 };
 
