@@ -8,6 +8,7 @@
 -- function definitions.
 -- =============================================================================
 
+drop function if exists public.seed_project_from_template(uuid, text);
 create or replace function public.seed_project_from_template(
   p_project uuid,
   p_template_key text default 'mecoy_website'
@@ -109,6 +110,7 @@ grant execute on function public.seed_project_from_template(uuid, text) to authe
 -- create_project_with_template
 -- One-shot RPC the frontend can call to atomically create + seed a project.
 -- =============================================================================
+drop function if exists public.create_project_with_template(uuid, text, text, text, text);
 create or replace function public.create_project_with_template(
   p_workspace uuid,
   p_name text,
@@ -143,6 +145,7 @@ grant execute on function public.create_project_with_template(uuid, text, text, 
 -- create_workspace
 -- SECURITY DEFINER bypass for workspace creation (used by frontend)
 -- =============================================================================
+drop function if exists public.create_workspace(text);
 create or replace function public.create_workspace(p_name text)
 returns public.workspaces
 language plpgsql
